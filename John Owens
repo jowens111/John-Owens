@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Strike or Ball Analyzer</title>
+  <style>
+    body {
+      background-color: #f0f0f0;
+      text-align: center;
+      font-family: Arial;
+    }
+    canvas {
+      border: 2px solid black;
+    }
+    #zone {
+      position: absolute;
+      border: 3px solid red;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Upload Pitch Video and Click Where It Crossed the Plate</h2>
+  <input type="file" accept="video/*" id="videoInput"><br><br>
+  <video id="video" width="640" controls></video><br><br>
+  <canvas id="canvas" width="640" height="360"></canvas><br>
+  <p id="result" style="font-size: 24px; font-weight: bold;"></p>
+
+  <script>
+    const video = document.getElementById('video');
+    const input = document.getElementById('videoInput');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const result = document.getElementById('result');
+
+    const strikeZone = {
+      x: 270, // left
+      y: 100, // top
+      width: 100,
+      height: 150
+    };
+
+    // Draw strike zone
+    function drawStrikeZone() {
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(strikeZone.x, strikeZone.y, strikeZone.width, strikeZone.height);
+    }
+
+    // Draw video frame on canvas
+    video.addEventListener('play', function () {
+      const draw = () => {
+        if (!video.paused && !video.ended) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          drawStrikeZone();
+          requestAnimationFrame(draw);
+        }
+      };
+      draw();
+    });
+
+    // Upload video
+    input.onchange = () => {
+      const file = input.files[0];
+      if (file) {
+        video.src = URL.createObjectURL(file);
+        video.load();
+      }
+    };
+
+    // Click to determine pitch result
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const insideZone = (
+        x >= strikeZone.x &&
+        x <= strikeZone.x + strikeZone.width &&
+        y >= strikeZone.y &&
+        y <= strikeZone.y + strikeZone.height
+      );
+
+      result.textContent = insideZone ? 'STRIKE' : 'BALL';
+      result.style.color = insideZone ? 'green' : 'blue';
+    });
+  </script>
+</body>
+</html>
